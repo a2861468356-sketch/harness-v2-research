@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="zh-CN" data-public-site>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="description" content="Harness V2 量化研究的只读结果、证据分类、研究日志和预算。">
+  <title>Harness V2 量化研究</title>
+  <link rel="stylesheet" href="./style.css">
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <div class="shell">
+    <aside class="rail" aria-label="主导航">
+      <a class="brand" href="#overview" aria-label="Harness 研究总览">
+        <span class="brandmark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+        <span><strong>Harness <b>V2</b></strong><small>QUANT RESEARCH</small></span>
+      </a>
+      <nav class="nav" id="nav" aria-label="研究页面">
+        <a href="#overview" data-page="overview"><span aria-hidden="true">◈</span>总览</a>
+        <a href="#tree" data-page="tree"><span aria-hidden="true">⑂</span>进化树</a>
+        <a href="#results" data-page="results"><span aria-hidden="true">▥</span>回测</a>
+        <a href="#audit" data-page="audit"><span aria-hidden="true">◇</span>审计</a>
+        <a href="#markets" data-page="markets"><span aria-hidden="true">◎</span>品种池</a>
+        <a href="#knowledge" data-page="knowledge"><span aria-hidden="true">▤</span>知识库</a>
+        <a href="#system" data-page="system"><span aria-hidden="true">⌁</span>系统</a>
+      </nav>
+      <div class="rail-foot">
+        <span class="lockmark" aria-hidden="true">▣</span>
+        <div>公开只读<small>正式留验封存</small></div>
+      </div>
+    </aside>
+    <main>
+      <header class="topbar">
+        <div class="topline">Harness V2 量化研究</div>
+        <div class="topstatus"><span id="status" class="badge muted" role="status">正在读取</span><span id="sync" class="time"></span></div>
+      </header>
+      <div id="notice" class="notice" role="status" hidden></div>
+      <section id="content" aria-label="研究内容" aria-live="polite">
+        <div class="heading"><h1>研究总览</h1></div>
+        <div class="panel loading">正在读取最近一次公开快照…</div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>
