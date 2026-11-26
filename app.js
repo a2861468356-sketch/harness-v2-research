@@ -366,11 +366,13 @@ function knowledgePage(data){
 function capabilityStatus(capability){
   if(!capability)return "";
   return section(panelHead("高能力模型专项","工程验收与真实研究进度")+
-    rows([["模型与恢复状态",safe(capability.route+" · "+capability.state)],
+    rows([["模型与恢复状态",safe([capability.route,capability.effort,capability.state].filter(Boolean).join(" · "))],
       ["本轮派发",num(capability.calls,0)+" / "+num(capability.cap_calls,0)],
-      ["确认 Token",num(capability.tokens,0)+" / "+num(capability.cap_tokens,0)],
+      ["确认 Token",num(capability.tokens,0)],
+      ["批次 Token 预警线",num(capability.warning_tokens,0)],
       ["中断预留 Token",num(capability.reserved,0)],
       ["候选逻辑预检",safe(capability.preflight)],
+      ["真实模型工程验收",safe(capability.checks?.join("、")||"待验收")],
       ["数据权限",safe(capability.data_permission)],
       ["证据隔离",safe(capability.custody)],
       ["真实市场研究",safe(capability.research)]]));
