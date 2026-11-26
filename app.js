@@ -267,6 +267,7 @@ function formalBudget(batch){
         ...(batch.batch===2?[["实测代数 / 实测父子边",num(batch.measured_generations||0,0)+" / "+num(batch.measured_parent_edges||0,0)]]:[]),
         ["未结算预留 Token",num(u.tokens_reserved_unresolved,0)],
         ["正式 / 工程钱包",num(u.formal_wallets,0)+" / "+num(u.engineering_wallets,0)+"，总上限 "+num(c.wallets,0)],
+        ...(batch.batch===2?[["钱包派发次数",num(u.wallets,0)]]:[]),
         ["累计计算 / 实际壁钟",num(u.compute_seconds,1)+" / "+num(u.wall_seconds,1)+" 秒"],
         ["新增支出",num(u.spend,0)],["停止原因",safe(batch.reason||"运行中")]]));
 }
