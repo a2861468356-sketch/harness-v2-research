@@ -363,6 +363,18 @@ function knowledgePage(data){
       data.history.map(r=>'<details class="record"><summary>'+safe(r.id+" · "+r.name)+'</summary>'+
       '<p class="detailcopy">'+safe(r.hypothesis)+"<br>"+safe(r.result)+"<br>"+safe(r.failure)+"<br>"+safe(r.retain)+'</p><div class="record-token">'+safe(r.source_sha256)+'</div></details>').join(""));
 }
+function capabilityStatus(capability){
+  if(!capability)return "";
+  return section(panelHead("高能力模型专项","工程验收与真实研究进度")+
+    rows([["模型与恢复状态",safe(capability.route+" · "+capability.state)],
+      ["本轮派发",num(capability.calls,0)+" / "+num(capability.cap_calls,0)],
+      ["确认 Token",num(capability.tokens,0)+" / "+num(capability.cap_tokens,0)],
+      ["中断预留 Token",num(capability.reserved,0)],
+      ["候选逻辑预检",safe(capability.preflight)],
+      ["数据权限",safe(capability.data_permission)],
+      ["证据隔离",safe(capability.custody)],
+      ["真实市场研究",safe(capability.research)]]));
+}
 function systemPage(d){
   const live=d.runtime;
   if(publicSite){
@@ -370,7 +382,7 @@ function systemPage(d){
       section(panelHead("最近一次同步")+
         rows([["研究状态",safe(live.task)],["研究状态更新时间",date(live.at)],
           ["公开快照时间",date(snapshot.synced_at)+" 都柏林"],["同步间隔","每 30 分钟"]]))+
-      formalBudget(d.formal_run)+section(panelHead("公开历史事件","按事件类别与归档阶段汇总")+
+      capabilityStatus(d.capability)+formalBudget(d.formal_run)+section(panelHead("公开历史事件","按事件类别与归档阶段汇总")+
         table(["时间","来源","事件","候选"],d.events.map(e=>[
           date(e.at),safe(e.source),safe(phaseLabels[e.stage]||e.stage),safe(e.trial||"—")])));
   }
@@ -383,7 +395,7 @@ function systemPage(d){
       rows([["当前任务",safe(live.task)],["最后状态 / 心跳",date(live.at)],["发布器",safe(d.log.publisher?.status||"等待同步")],
       ["恢复测试",d.audit.resumed?"第一代检查点完整":"无凭据"],["完成后重启",d.audit.restart_unchanged?"无重复调用或重跑":"无凭据"]]))+
     section(panelHead("历史异常")+"<p>"+safe(d.log.incident.summary)+"</p>")+'</div>'+
-    section(panelHead("模型调用记录","仅显示已许可会话元数据与可用令牌用量")+
+    capabilityStatus(d.capability)+section(panelHead("模型调用记录","仅显示已许可会话元数据与可用令牌用量")+
       table(["时间","用途","候选","用时（秒）","输入 Token","输出 Token","状态","会话"],
         d.models.map(m=>[date(m.at),safe(m.source),safe(m.trial||"—"),num(m.seconds),
           num(m.usage.input_tokens,0),num(m.usage.output_tokens,0),safe(m.status),'<code>'+safe(m.session||"—")+'</code>'])))+
