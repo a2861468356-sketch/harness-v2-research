@@ -261,12 +261,12 @@ function formalBudget(batch){
   if(!batch)return "";
   const u=batch.used,c=batch.caps;
   const paired=batch.paired_price;
-  return section(panelHead(({1:"第一批",2:"第二批",3:"第三批"}[batch.batch]||"")+"真实市场研究","按实际调用与钱包计费")+
-      rows([[batch.batch===3?"登记席位（含配对）":"候选",num(u.candidates,0)+" / "+num(c.candidates,0)],
+  return section(panelHead(({1:"第一批",2:"第二批",3:"第三批",4:"第四批"}[batch.batch]||"")+"真实市场研究","按实际调用与钱包计费")+
+      rows([[batch.batch>=3?"登记席位（含配对）":"候选",num(u.candidates,0)+" / "+num(c.candidates,0)],
         ["真实模型调用",num(u.model_calls,0)+" / "+num(c.model_calls,0)],
         ["已确认 Token",num(u.tokens,0)+" / "+num(c.tokens,0)+(batch.token_warning?"（批次预警线）":"")],
         ...(batch.batch>=2?[["实测代数 / 实测父子边",num(batch.measured_generations||0,0)+" / "+num(batch.measured_parent_edges||0,0)]]:[]),
-        ...(batch.batch===3?[["完整实测候选 / 配对价格诊断",num(batch.measured_candidates,0)+" / "+num(batch.paired_diagnostics,0)],
+        ...(batch.batch>=3?[["完整实测候选 / 配对价格诊断",num(batch.measured_candidates,0)+" / "+num(batch.paired_diagnostics,0)],
           ["第二批 Q207 归因",batch.historical_q207_closed?"已完成指纹核验":"待核验"]]:[]),
         ["未结算预留 Token",num(u.tokens_reserved_unresolved,0)],
         ["正式 / 工程钱包",num(u.formal_wallets,0)+" / "+num(u.engineering_wallets,0)+"，总上限 "+num(c.wallets,0)],
@@ -277,7 +277,19 @@ function formalBudget(batch){
         [safe(paired.source+" · "+paired.minutes+" 分钟 · "+name),num(row.observed_paired,0),sign(row.directional.mean_bps),sign(row.relative_to_peers.mean_bps)]))+
         '<p class="muted">使用已用开发样本的闭合价格。'+
         ([paired.base,paired.later].every(row=>row.directional.interval_crosses_zero&&row.relative_to_peers.interval_crosses_zero)?"四个估计区间均跨零。":"")+
-        '此诊断不产生新钱包或成交，也不属于独立验证。</p>':""));
+        '此诊断不产生新钱包或成交，也不属于独立验证。</p>':""))+researchAllocation(batch.allocation);
+}
+
+
+function researchAllocation(info){
+  if(!info)return "";
+  return section(panelHead("智能研究调度","按反证信息价值与资源分配 · 透明基线")+
+    rows([["L1 价格诊断",num(info.diagnostics,0)],["L2 已完整评估 / 已登记",num(info.l2_closed,0)+" / "+num(info.l2_registered,0)],
+      ["L3 独立验证",safe(info.l3)],["有效 / 无效 / 未结算调用",[info.valid_calls,info.invalid_calls,info.unsettled_calls].map(n=>num(n,0)).join(" / ")],
+      ["定向重复筛查",num(info.duplicates,0)+" / "+num(info.screened,0)],
+      ...Object.entries(info.architectures).map(([kind,value])=>[kind,safe(value)])])+
+    table(["方向","层级","选择依据","父代","信息收益"],info.rounds.map(row=>[safe(row.family),safe(row.layer),
+      safe(row.reason),safe(row.parent||"—"),safe(row.information)])));
 }
 
 function marketReadiness(market){
