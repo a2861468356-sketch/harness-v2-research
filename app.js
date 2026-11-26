@@ -389,7 +389,8 @@ function marketsPage(data){
 function knowledgePage(data){
   const files = data.records.filter(r=>r.scope===state.lane&&
     (r.key+" "+r.name+" "+r.hypothesis+" "+r.failure).toLowerCase().includes(state.knowledgeSearch.toLowerCase()));
-  const entry=(r)=>'<details class="record"><summary>'+safe(r.name)+' '+linkTrial(r.trial)+' '+classBadge(r.scope)+'</summary>'+
+  const evidenceLink=(r)=>r.key.startsWith("LAB-")?'<a class="textbutton" href="#tree">查看结构进化</a>':linkTrial(r.trial);
+  const entry=(r)=>'<details class="record"><summary>'+safe(r.name)+' '+evidenceLink(r)+' '+classBadge(r.scope)+'</summary>'+
     detail({...r,origin:r.basis,change:r.change,falsifier:r.counterexample})+
     '<p class="detailcopy">'+safe(r.retain||r.interpretation)+'</p><div class="record-token">'+
     r.evidence.map(x=>safe(x.label+" · SHA-256 "+x.sha256)).join("<br>")+'</div></details>';
