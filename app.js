@@ -303,24 +303,42 @@ function auditPage(d){
     section(panelHead("候选拒绝与晋级依据","PBO、DSR 与区间证据不能证明未来表现")+
       table(["候选","DSR","状态","判定依据"],d.nodes.map(n=>[linkTrial(n.id),num(n.dsr,3),trialStatus(n.status),safe(n.gate_reasons.join("；"))])));
 }
+function externalCoverage(external){
+  if(!external?.sources?.length)return "";
+  const statuses = rows([["最近采集",safe(external.latest||"待采集")],
+    ["官方发布索引",external.catalog_verified?"已核对":"待核对"],
+    ["样本用途",safe("仅工程验收 · 研究使用 "+num(external.research_uses,0)+" 次 · 待审核 "+num(external.pending_uses,0)+" 项")],
+    ["同期外部信号与 Binance 模拟成交","等待审批和可知时间核验"]]);
+  const entries = external.sources.flatMap(source=>{
+    const identity = "<strong>"+safe(source.name)+"</strong><br>"+safe(source.kind+" · "+source.market);
+    const status = safe(source.review)+(source.versions?"<br>"+num(source.versions,0)+" 份发布档案":"");
+    return source.coverage.length?source.coverage.map((window,i)=>[
+      i===0?identity:"", i===0?status:"",safe(window.grain+" · "+window.start+" 至 "+window.end),
+      num(window.observations,0)+" 条 · "+num(window.missing,0)+" 缺值"
+    ]):[[identity,status,"—","—"]];
+  });
+  return section(panelHead("外部历史数据", "A 类 · 各档案按发布版本统计；时间覆盖可重叠")+
+    statuses+table(["来源","审核与采集","原始粒度及覆盖","质量"],entries));
+}
 function marketsPage(data){
   const s=data.summary;
   if(publicSite){
-    return heading("Coverage / TradFi","全球 TradFi 市场覆盖","归档目录与已用开发分区汇总。",bubble("汇总数据","muted"))+
+    return heading("Coverage / TradFi","全球 TradFi 市场覆盖","Binance 原生开发分区与外部来源审核汇总。",bubble("汇总数据","muted"))+
       '<div class="grid kpis">'+tile("目录合约",num(s.count,0),"归档快照")+
         tile("快照达标",num(s.liquid,0),"目录口径")+tile("开发行情分区",num(data.windows.length,0),"划分独立统计")+'</div>'+
       '<div class="grid columns">'+section(panelHead("目录地区")+
         table(["地区","数量"],data.groups.map(x=>[safe(x.name),num(x.count,0)])))+
-      section(panelHead("已用开发覆盖")+
-        table(["分区","合约数","时钟行数"],data.windows.map(x=>[safe(x.window),num(x.assets,0),num(x.rows,0)])))+'</div>';
+      section(panelHead("Binance 原生开发覆盖")+
+        table(["分区","合约数","时钟行数"],data.windows.map(x=>[safe(x.window),num(x.assets,0),num(x.rows,0)])))+'</div>'+externalCoverage(data.external);
   }
   const filtered=data.rows.filter(r=>(!state.market||r.market===state.market)&&(!state.liquid||r.liquid)&&
     (r.symbol+" "+r.name).toLowerCase().includes(state.marketSearch.toLowerCase()));
   return heading("Coverage / TradFi","全球 TradFi 品种池","历史归档快照 · "+date(s.as_of)+" 都柏林时间",bubble("离线目录","muted"))+
     '<div class="grid kpis">'+tile("已知合约",num(s.count,0),"两份目录按合约去重")+tile("快照成交额达标",num(s.liquid,0),"≥1,000 万 USDT")+
     tile("快照前七日上市",num(s.recent,0),"按目录时间戳")+tile("行情分区",num(data.windows.length,0),"已用开发／补充")+'</div>'+
-    section(panelHead("批准行情覆盖","分区为独立钱包，合约数不等于逐笔覆盖")+
+    section(panelHead("Binance 原生开发覆盖","分区为独立钱包，逐笔覆盖单独核验")+
       table(["分区","发行合约数","5 分钟时钟行数"],data.windows.map(x=>[safe(x.window),num(x.assets,0),num(x.rows,0)])))+
+    externalCoverage(data.external)+
     section(panelHead("合约目录","快照数额仅供审计。新仓必须按历史决策时点核验流动性。")+
       '<div class="actions filters">'+selector("market","市场",[["","全部"],...s.markets.map(x=>[x,x])],state.market)+
       '<label class="select-label">合约<input id="marketSearch" type="search" placeholder="输入合约或名称" value="'+safe(state.marketSearch)+'"></label>'+
