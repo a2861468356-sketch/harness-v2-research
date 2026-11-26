@@ -134,7 +134,7 @@ function overview(d){
       rows([["当前任务",safe(d.runtime.task)],["执行阶段",safe(d.current?.status||"等待人工审核")],["市场评估器",d.market_readiness?.status==="awaiting_review"?'<a href="#audit">接线与成交审计</a>':"待验收"],["最近登记",safe(d.latest?.id||"—")],
         ["已淘汰 / 证据不足",rejects+" / "+uncertain],["待独立验证",num(waiting,0)],["开发账户账本",num(wallets,0)],["研发状态更新时间",date(d.runtime.at)]])+
       ((d.current?.hypothesis||d.latest?.hypothesis)?'<details><summary>'+safe(d.current?"当前候选假设":"最近候选假设")+'</summary><p class="detailcopy">'+safe(d.current?.hypothesis||d.latest?.hypothesis)+'</p></details>':""))+'</div>'+
-    formalBudget(d.formal_run)+
+    formalBudget(d.formal_run)+strategyLabStatus(d.strategy_lab)+
     '<div class="top-gap">'+section(panelHead("最近候选","各计划执行结果及证据类别",'<a class="textbutton" href="#tree">查看进化树</a>')+
       table(["编号","策略","样本口径","中性净额","状态"],tab))+'</div>';
 }
@@ -213,7 +213,7 @@ function treePage(d,id){
     '<div class="top-gap">'+section(panelHead("真实模型驱动合成", "已验证反馈驱动的两代工程", bubble("V2","blue"))+forest("synthetic_engineering"))+'</div>'+
     (unknown.length?section(panelHead("待核对的父代")+unknown.map(n=>safe(n.id)).join("、")):"")+'</div>'+
     section(panelHead(safe(selected.id+" · "+selected.name),"候选溯源",classBadge(selected.scope))+detail(selected)+
-    '<div class="actions"><a class="textbutton" href="#results/'+safe(selected.id)+'">'+(publicSite?"查看公开指标":"查看指标与代码差异")+'</a></div>')+'</div>';
+    '<div class="actions"><a class="textbutton" href="#results/'+safe(selected.id)+'">'+(publicSite?"查看公开指标":"查看指标与代码差异")+'</a></div>')+'</div>'+strategyLabLineage(d.strategy_lab);
 }
 function resultControls(){
   const node=nodeFor(state.selected);
@@ -290,6 +290,23 @@ function researchAllocation(info){
       ...Object.entries(info.architectures).map(([kind,value])=>[kind,safe(value)])])+
     table(["方向","层级","选择依据","父代","信息收益"],info.rounds.map(row=>[safe(row.family),safe(row.layer),
       safe(row.reason),safe(row.parent||"—"),safe(row.information)])));
+}
+
+function strategyLabStatus(d){
+  if(!d)return "";
+  return section(panelHead("开放式策略架构",d.version,bubble("合成工程","blue"))+
+    rows([["进度",safe(d.status)],["正式市场钱包",num(d.market_wallets,0)],
+      ["模型调用 / Token",num(d.calls,0)+" / "+num(d.tokens,0)],
+      ["冻结基准一致",num(d.benchmarks,0)+" 组 · "+num(d.benchmark_files,0)+" 个文件"],
+      ...Object.entries(d.supports).map(([kind,status])=>[safe(kind),safe(status)])])+
+    table(["训练接口","已复验合成折"],Object.entries(d.training).map(([kind,count])=>[safe(kind),num(count,0)])));
+}
+function strategyLabLineage(d){
+  if(!d)return "";
+  return section(panelHead("策略结构进化","隔离合成轨迹",bubble("工程","blue"))+
+    table(["候选","架构","父代及变化","成交片段 / 层数","因果与恢复"],d.candidates.map(row=>[
+      safe(row.id),safe(row.architecture),safe(row.parents.map(p=>p.id+" · "+p.change).join("、")||"新根"),
+      num(row.fills,0)+" / "+num(row.layers,0),safe(row.causal_prefix&&row.resume_identical?"已核对":"待核对")])));
 }
 
 function marketReadiness(market){
@@ -406,7 +423,7 @@ function systemPage(d){
       section(panelHead("最近一次同步")+
         rows([["研究状态",safe(live.task)],["研究状态更新时间",date(live.at)],
           ["公开快照时间",date(snapshot.synced_at)+" 都柏林"],["同步间隔","每 30 分钟"]]))+
-      capabilityStatus(d.capability)+formalBudget(d.formal_run)+section(panelHead("公开历史事件","按事件类别与归档阶段汇总")+
+      capabilityStatus(d.capability)+strategyLabStatus(d.strategy_lab)+formalBudget(d.formal_run)+section(panelHead("公开历史事件","按事件类别与归档阶段汇总")+
         table(["时间","来源","事件","候选"],d.events.map(e=>[
           date(e.at),safe(e.source),safe(phaseLabels[e.stage]||e.stage),safe(e.trial||"—")])));
   }
@@ -419,7 +436,7 @@ function systemPage(d){
       rows([["当前任务",safe(live.task)],["最后状态 / 心跳",date(live.at)],["发布器",safe(d.log.publisher?.status||"等待同步")],
       ["恢复测试",d.audit.resumed?"第一代检查点完整":"无凭据"],["完成后重启",d.audit.restart_unchanged?"无重复调用或重跑":"无凭据"]]))+
     section(panelHead("历史异常")+"<p>"+safe(d.log.incident.summary)+"</p>")+'</div>'+
-    capabilityStatus(d.capability)+section(panelHead("模型调用记录","仅显示已许可会话元数据与可用令牌用量")+
+    capabilityStatus(d.capability)+strategyLabStatus(d.strategy_lab)+section(panelHead("模型调用记录","仅显示已许可会话元数据与可用令牌用量")+
       table(["时间","用途","候选","用时（秒）","输入 Token","输出 Token","状态","会话"],
         d.models.map(m=>[date(m.at),safe(m.source),safe(m.trial||"—"),num(m.seconds),
           num(m.usage.input_tokens,0),num(m.usage.output_tokens,0),safe(m.status),'<code>'+safe(m.session||"—")+'</code>'])))+
