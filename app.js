@@ -260,16 +260,24 @@ function resultInner(d,other){
 function formalBudget(batch){
   if(!batch)return "";
   const u=batch.used,c=batch.caps;
-  return section(panelHead(batch.batch===2?"第二批真实市场研究":"第一批真实市场研究","按实际调用与钱包计费")+
-      rows([["候选",num(u.candidates,0)+" / "+num(c.candidates,0)],
+  const paired=batch.paired_price;
+  return section(panelHead(({1:"第一批",2:"第二批",3:"第三批"}[batch.batch]||"")+"真实市场研究","按实际调用与钱包计费")+
+      rows([[batch.batch===3?"登记席位（含配对）":"候选",num(u.candidates,0)+" / "+num(c.candidates,0)],
         ["真实模型调用",num(u.model_calls,0)+" / "+num(c.model_calls,0)],
         ["已确认 Token",num(u.tokens,0)+" / "+num(c.tokens,0)+(batch.token_warning?"（批次预警线）":"")],
-        ...(batch.batch===2?[["实测代数 / 实测父子边",num(batch.measured_generations||0,0)+" / "+num(batch.measured_parent_edges||0,0)]]:[]),
+        ...(batch.batch>=2?[["实测代数 / 实测父子边",num(batch.measured_generations||0,0)+" / "+num(batch.measured_parent_edges||0,0)]]:[]),
+        ...(batch.batch===3?[["完整实测候选 / 配对价格诊断",num(batch.measured_candidates,0)+" / "+num(batch.paired_diagnostics,0)],
+          ["第二批 Q207 归因",batch.historical_q207_closed?"已完成指纹核验":"待核验"]]:[]),
         ["未结算预留 Token",num(u.tokens_reserved_unresolved,0)],
         ["正式 / 工程钱包",num(u.formal_wallets,0)+" / "+num(u.engineering_wallets,0)+"，总上限 "+num(c.wallets,0)],
-        ...(batch.batch===2?[["钱包派发次数",num(u.wallets,0)]]:[]),
+        ...(batch.batch>=2?[["钱包派发次数",num(u.wallets,0)]]:[]),
         ["累计计算 / 实际壁钟",num(u.compute_seconds,1)+" / "+num(u.wall_seconds,1)+" 秒"],
-        ["新增支出",num(u.spend,0)],["停止原因",safe(batch.reason||"运行中")]]));
+        ["新增支出",num(u.spend,0)],["停止原因",safe(batch.reason||"运行中")]])+
+      (paired?table(["固定时距价格诊断","可配对意图","方向均额（bp）","相对同伴（bp）"],[["原段",paired.base],["补充段",paired.later]].map(([name,row])=>
+        [safe(paired.source+" · "+paired.minutes+" 分钟 · "+name),num(row.observed_paired,0),sign(row.directional.mean_bps),sign(row.relative_to_peers.mean_bps)]))+
+        '<p class="muted">使用已用开发样本的闭合价格。'+
+        ([paired.base,paired.later].every(row=>row.directional.interval_crosses_zero&&row.relative_to_peers.interval_crosses_zero)?"四个估计区间均跨零。":"")+
+        '此诊断不产生新钱包或成交，也不属于独立验证。</p>':""));
 }
 
 function marketReadiness(market){
