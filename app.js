@@ -434,7 +434,7 @@ function marketsPage(data){
 function knowledgePage(data){
   const files = data.records.filter(r=>r.scope===state.lane&&
     (r.key+" "+r.name+" "+r.hypothesis+" "+r.failure).toLowerCase().includes(state.knowledgeSearch.toLowerCase()));
-  const evidenceLink=(r)=>r.key.startsWith("EXEC-")?'<a class="textbutton" href="#audit">查看执行验收</a>':r.key.startsWith("LAB-")?'<a class="textbutton" href="#tree">查看结构进化</a>':linkTrial(r.trial);
+  const evidenceLink=(r)=>r.key.startsWith("OPEN-")?'<a class="textbutton" href="#audit">查看第五批</a>':r.key.startsWith("EXEC-")?'<a class="textbutton" href="#audit">查看执行验收</a>':r.key.startsWith("LAB-")?'<a class="textbutton" href="#tree">查看结构进化</a>':linkTrial(r.trial);
   const entry=(r)=>'<details class="record"><summary>'+safe(r.name)+' '+evidenceLink(r)+' '+classBadge(r.scope)+'</summary>'+
     detail({...r,origin:r.basis,change:r.change,falsifier:r.counterexample})+
     '<p class="detailcopy">'+safe(r.retain||r.interpretation)+'</p><div class="record-token">'+
@@ -515,7 +515,7 @@ async function render(){
     }else if(page==="results"){
       if(id && nodeFor(id)?.completed && id!==state.selected){ state.selected=id;state.period="base";state.compare=""; }
       content.innerHTML=heading("Research / Replay","量化回测中心",publicSite?"对照公开的区间汇总与抽样曲线。":"按候选、区间及执行档查看实际账本。")+
-        section(resultControls())+'<div id="result-data" class="loading">正在读取账户…</div>';
+        fifthBatch(state.data.open_fifth)+section(resultControls())+'<div id="result-data" class="loading">正在读取账户…</div>';
       const data=await request(urlTrial(state.selected,state.period,state.profile));
       const other=state.compare?await request(urlTrial(state.compare,state.period,state.profile)):null;
       if(ticket!==renderVersion)return;
