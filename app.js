@@ -134,7 +134,7 @@ function overview(d){
       rows([["当前任务",safe(d.runtime.task)],["执行阶段",safe(d.current?.status||"等待人工审核")],["市场评估器",d.market_readiness?.status==="awaiting_review"?'<a href="#audit">接线与成交审计</a>':"待验收"],["最近登记",safe(d.latest?.id||"—")],
         ["已淘汰 / 证据不足",rejects+" / "+uncertain],["待独立验证",num(waiting,0)],["开发账户账本",num(wallets,0)],["研发状态更新时间",date(d.runtime.at)]])+
       ((d.current?.hypothesis||d.latest?.hypothesis)?'<details><summary>'+safe(d.current?"当前候选假设":"最近候选假设")+'</summary><p class="detailcopy">'+safe(d.current?.hypothesis||d.latest?.hypothesis)+'</p></details>':""))+'</div>'+
-    formalBudget(d.formal_run)+strategyLabStatus(d.strategy_lab)+(d.open_admission?openAdmission(d.open_admission):openExecution(d.open_execution))+
+    fifthBatch(d.open_fifth)+formalBudget(d.formal_run)+strategyLabStatus(d.strategy_lab)+(d.open_admission?openAdmission(d.open_admission):openExecution(d.open_execution))+
     '<div class="top-gap">'+section(panelHead("最近候选","各计划执行结果及证据类别",'<a class="textbutton" href="#tree">查看进化树</a>')+
       table(["编号","策略","样本口径","中性净额","状态"],tab))+'</div>';
 }
@@ -213,7 +213,7 @@ function treePage(d,id){
     '<div class="top-gap">'+section(panelHead("真实模型驱动合成", "已验证反馈驱动的两代工程", bubble("V2","blue"))+forest("synthetic_engineering"))+'</div>'+
     (unknown.length?section(panelHead("待核对的父代")+unknown.map(n=>safe(n.id)).join("、")):"")+'</div>'+
     section(panelHead(safe(selected.id+" · "+selected.name),"候选溯源",classBadge(selected.scope))+detail(selected)+
-    '<div class="actions"><a class="textbutton" href="#results/'+safe(selected.id)+'">'+(publicSite?"查看公开指标":"查看指标与代码差异")+'</a></div>')+'</div>'+strategyLabLineage(d.strategy_lab)+
+    '<div class="actions"><a class="textbutton" href="#results/'+safe(selected.id)+'">'+(publicSite?"查看公开指标":"查看指标与代码差异")+'</a></div>')+'</div>'+strategyLabLineage(d.strategy_lab)+fifthBatch(d.open_fifth)+
     (d.open_admission?section(panelHead("历史执行工程","正式市场血缘保持原登记")+
       '<p class="muted">四窗六档工程复验单独登记，新增正式市场父子边 0 条。</p><a class="textbutton" href="#audit">查看架构准入</a>'):"");
 }
@@ -336,6 +336,23 @@ function openAdmission(panel){
     '<p class="muted">'+safe(panel.requirements.join(" · "))+'</p>');
 }
 
+function fifthBatch(panel){
+  if(!panel)return "";
+  const arch={open_rule:"开放规则",state_matrix:"状态矩阵",dynamic_sizing:"动态分层",statistical:"统计",
+    machine_learning:"机器学习",hybrid:"混合",multi_strategy:"共享全仓组合"};
+  return section(panelHead("第五批开放架构真实市场研究","已用 Binance 开发样本",bubble(panel.state==="stopped"?"待人工审核":"正式研究进行中","blue"))+
+    rows([["试验席位 / 钱包",num(panel.used.candidates,0)+" / "+num(panel.used.formal_wallets,0)],
+      ["模型派发 / Token",num(panel.used.model_calls,0)+" / "+num(panel.used.tokens,0)],
+      ["L1 / 完成 L2 / 实测父子边",[panel.diagnostics,panel.completed,panel.parent_edges].map(n=>num(n,0)).join(" / ")],
+      ...(panel.stop?[["停止原因",safe(panel.stop)]]:[])])+
+    table(["试验","层级与架构","状态","Base / 补充窗","实测父代"],panel.rows.map(r=>[
+      safe(r.id),safe(r.stage+" · "+(arch[r.architecture]||"开放策略")),safe(r.status),
+      r.whole_wallet?sign(r.net.base)+" / "+sign(r.net.later)+" USDT":
+        r.diagnostic_bps.base!==null?sign(r.diagnostic_bps.base)+" / "+sign(r.diagnostic_bps.later)+" bp": "待核对",
+      safe(r.parent||"—")]))+
+    '<p class="muted">L1 为价格诊断。L2 净额含冻结成本。独立留验继续封存。</p>');
+}
+
 function marketReadiness(market){
   if(market?.status!=="awaiting_review")return "";
   return section(panelHead("真实市场评估器",market.order_checks?.length?"冻结 Binance 账本与非零开仓验收":"冻结 Binance 账本与零开仓接线验收")+
@@ -355,7 +372,7 @@ function auditPage(d){
   const a=d.audit;
   const labels={credential_fixture_denied:"凭证探针拒绝",evaluator_write_denied:"评估器改写拒绝",external_program_denied:"外部进程拒绝",listing_denied:"目录枚举拒绝",minimal_env:"最小环境",network_denied:"策略执行禁网",read_denied:"外部文件读取拒绝",scratch_read_write:"临时目录可读写",symlink_read_denied:"符号链接越界拒绝"};
   return heading("Governance / Audit","防过拟合审计","记录固定评估器、样本权限和不确定性。",bubble("留验封存","blue"))+
-    (d.open_admission?openAdmission(d.open_admission):openExecution(d.open_execution))+
+    fifthBatch(d.open_fifth)+(d.open_admission?openAdmission(d.open_admission):openExecution(d.open_execution))+
     '<div class="grid kpis">'+tile("已用市场候选",num(a.registered_market,0),"全部登记")+
       tile("CSCV PBO",pct(a.pbo),num(a.blocks,0)+" 个区块 · 开发诊断")+
       tile("DSR 区块",num(a.dsr_blocks,0),"仅已用样本")+
