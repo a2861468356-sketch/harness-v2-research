@@ -349,7 +349,9 @@ function openBatch(panel){
     table(["试验","层级与架构","状态","Base / 补充窗","实测父代"],panel.rows.map(r=>[
       safe(r.id),safe(r.stage+" · "+(arch[r.architecture]||"开放策略")+(r.matched_signal_pair?" · 同信号":"")),safe(r.status),
       r.whole_wallet?sign(r.net.base)+" / "+sign(r.net.later)+" USDT":
-        r.diagnostic_bps.base!==null?sign(r.diagnostic_bps.base)+" / "+sign(r.diagnostic_bps.later)+" bp": "待核对",
+        r.absolute_bps?.base!==null && Number.isFinite(r.absolute_bps?.base)?
+          "绝对 "+sign(r.absolute_bps.base)+" / "+sign(r.absolute_bps.later)+" bp":
+          r.diagnostic_bps.base!==null?"增量 "+sign(r.diagnostic_bps.base)+" / "+sign(r.diagnostic_bps.later)+" bp":"待核对",
       safe(r.parent||"—")]))+
     '<p class="muted">L1 为价格诊断。L2 净额含冻结成本。独立留验继续封存。</p>');
 }
