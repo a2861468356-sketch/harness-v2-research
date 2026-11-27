@@ -345,13 +345,15 @@ function openBatch(panel){
       ["模型派发 / Token",num(panel.used.model_calls,0)+" / "+num(panel.used.tokens,0)],
       ...(panel.batch>=6?[["Token 预警线",num(panel.token_warning,0)],["基础设施登记",num(panel.health_findings,0)]]:[]),
       ["L1 / 完成 L2 / 实测父子边",[panel.diagnostics,panel.completed,panel.parent_edges].map(n=>num(n,0)).join(" / ")],
+      ...(panel.batch===7?[["反馈后调度 / 覆盖未达",[panel.allocations_after_feedback,panel.coverage_failures].map(n=>num(n,0)).join(" / ")]]:[]),
+      ...(Number.isFinite(panel.controlled_delta?.base)?[["训练较规则中性净额差",sign(panel.controlled_delta.base)+" / "+sign(panel.controlled_delta.later)+" USDT"]]:[]),
       ...(panel.stop?[["停止原因",safe(panel.stop)]]:[])])+
     table(["试验","层级与架构","状态","Base / 补充窗","实测父代"],panel.rows.map(r=>[
       safe(r.id),safe(r.stage+" · "+(arch[r.architecture]||"开放策略")+(r.matched_signal_pair?" · 同信号":r.controlled?" · 架构对照":"")),safe(r.status),
       r.whole_wallet?sign(r.net.base)+" / "+sign(r.net.later)+" USDT":
         r.absolute_bps?.base!==null && Number.isFinite(r.absolute_bps?.base)?
           "绝对 "+sign(r.absolute_bps.base)+" / "+sign(r.absolute_bps.later)+" bp":
-          r.diagnostic_bps.base!==null?"增量 "+sign(r.diagnostic_bps.base)+" / "+sign(r.diagnostic_bps.later)+" bp":"待核对",
+          r.diagnostic_bps.base!==null?"增量 "+sign(r.diagnostic_bps.base)+" / "+sign(r.diagnostic_bps.later)+" bp":r.status==="证据不足"?"未计算收益":"待核对",
       safe(r.parent||"—")]))+
     '<p class="muted">L1 为价格诊断。L2 净额含冻结成本。独立留验继续封存。</p>');
 }
