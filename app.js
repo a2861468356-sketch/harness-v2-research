@@ -1,7 +1,7 @@
 "use strict";
 const publicSite = document.documentElement.hasAttribute("data-public-site");
 const pages = ["overview","tree","results","audit","markets","knowledge","system"];
-const classes = {market_development:"开发样本", synthetic_engineering:"合成工程", model_conjecture:"模型推测"};
+const classes = {market_development:"开发样本", synthetic_engineering:"合成工程", market_execution_engineering:"历史执行工程", model_conjecture:"模型推测"};
 const modeLabels = {neutral:"中性",conservative:"保守",adverse:"较不利",entry5:"首单 +5 bps",entry10:"首单 +10 bps",delay1000:"延迟压力"};
 const phaseLabels = {registered:"试验登记",model_dispatched:"模型派发",model_recorded:"回执已保存",completed:"评估完成",checkpoint_pause:"检查点暂停",stopped:"预算停止",paused:"等待核查",audited_and_accounted:"账户对账",compiled_and_prefix_audited:"候选前缀审计",started_or_resumed:"启动或续跑"};
 const state = {data:null, selected:"Q009", profile:"neutral", period:"base", compare:"", market:"", marketSearch:"", liquid:false, lane:"market_development", knowledgeSearch:"", tree:"Q009"};
@@ -134,7 +134,7 @@ function overview(d){
       rows([["当前任务",safe(d.runtime.task)],["执行阶段",safe(d.current?.status||"等待人工审核")],["市场评估器",d.market_readiness?.status==="awaiting_review"?'<a href="#audit">接线与成交审计</a>':"待验收"],["最近登记",safe(d.latest?.id||"—")],
         ["已淘汰 / 证据不足",rejects+" / "+uncertain],["待独立验证",num(waiting,0)],["开发账户账本",num(wallets,0)],["研发状态更新时间",date(d.runtime.at)]])+
       ((d.current?.hypothesis||d.latest?.hypothesis)?'<details><summary>'+safe(d.current?"当前候选假设":"最近候选假设")+'</summary><p class="detailcopy">'+safe(d.current?.hypothesis||d.latest?.hypothesis)+'</p></details>':""))+'</div>'+
-    formalBudget(d.formal_run)+strategyLabStatus(d.strategy_lab)+
+    formalBudget(d.formal_run)+strategyLabStatus(d.strategy_lab)+openExecution(d.open_execution)+
     '<div class="top-gap">'+section(panelHead("最近候选","各计划执行结果及证据类别",'<a class="textbutton" href="#tree">查看进化树</a>')+
       table(["编号","策略","样本口径","中性净额","状态"],tab))+'</div>';
 }
@@ -309,6 +309,16 @@ function strategyLabLineage(d){
       num(row.fills,0)+" / "+num(row.layers,0),safe(row.causal_prefix&&row.resume_identical?"已核对":"待核对")])));
 }
 
+function openExecution(panel){
+  if(!panel)return "";
+  return section(panelHead("开放架构真实市场执行",panel.version,bubble("工程验收","blue"))+
+    rows([["工程状态",safe(panel.status)],["正式架构准入",panel.open_architecture_formally_approved?"获准":"等待人工审核"],
+      ["逐笔成交片段",num(panel.fills,0)],["非零原生资金费事件",num(panel.nonzero_funding_events,0)],
+      ["正式试验席位",num(panel.formal_slots_used,0)],["风险证据",safe(panel.risk_scope)]])+
+    table(["架构","执行证据","研究准入"],panel.architectures.map(r=>[safe(r.name),safe(r.evidence),safe(r.admission)]))+
+    '<p class="muted">'+safe(panel.requirements.join(" · "))+'</p>');
+}
+
 function marketReadiness(market){
   if(market?.status!=="awaiting_review")return "";
   return section(panelHead("真实市场评估器",market.order_checks?.length?"冻结 Binance 账本与非零开仓验收":"冻结 Binance 账本与零开仓接线验收")+
@@ -328,6 +338,7 @@ function auditPage(d){
   const a=d.audit;
   const labels={credential_fixture_denied:"凭证探针拒绝",evaluator_write_denied:"评估器改写拒绝",external_program_denied:"外部进程拒绝",listing_denied:"目录枚举拒绝",minimal_env:"最小环境",network_denied:"策略执行禁网",read_denied:"外部文件读取拒绝",scratch_read_write:"临时目录可读写",symlink_read_denied:"符号链接越界拒绝"};
   return heading("Governance / Audit","防过拟合审计","记录固定评估器、样本权限和不确定性。",bubble("留验封存","blue"))+
+    openExecution(d.open_execution)+
     '<div class="grid kpis">'+tile("已用市场候选",num(a.registered_market,0),"全部登记")+
       tile("CSCV PBO",pct(a.pbo),num(a.blocks,0)+" 个区块 · 开发诊断")+
       tile("DSR 区块",num(a.dsr_blocks,0),"仅已用样本")+
@@ -389,7 +400,7 @@ function marketsPage(data){
 function knowledgePage(data){
   const files = data.records.filter(r=>r.scope===state.lane&&
     (r.key+" "+r.name+" "+r.hypothesis+" "+r.failure).toLowerCase().includes(state.knowledgeSearch.toLowerCase()));
-  const evidenceLink=(r)=>r.key.startsWith("LAB-")?'<a class="textbutton" href="#tree">查看结构进化</a>':linkTrial(r.trial);
+  const evidenceLink=(r)=>r.key.startsWith("EXEC-")?'<a class="textbutton" href="#audit">查看执行验收</a>':r.key.startsWith("LAB-")?'<a class="textbutton" href="#tree">查看结构进化</a>':linkTrial(r.trial);
   const entry=(r)=>'<details class="record"><summary>'+safe(r.name)+' '+evidenceLink(r)+' '+classBadge(r.scope)+'</summary>'+
     detail({...r,origin:r.basis,change:r.change,falsifier:r.counterexample})+
     '<p class="detailcopy">'+safe(r.retain||r.interpretation)+'</p><div class="record-token">'+
@@ -424,7 +435,7 @@ function systemPage(d){
       section(panelHead("最近一次同步")+
         rows([["研究状态",safe(live.task)],["研究状态更新时间",date(live.at)],
           ["公开快照时间",date(snapshot.synced_at)+" 都柏林"],["同步间隔","每 30 分钟"]]))+
-      capabilityStatus(d.capability)+strategyLabStatus(d.strategy_lab)+formalBudget(d.formal_run)+section(panelHead("公开历史事件","按事件类别与归档阶段汇总")+
+      capabilityStatus(d.capability)+strategyLabStatus(d.strategy_lab)+openExecution(d.open_execution)+formalBudget(d.formal_run)+section(panelHead("公开历史事件","按事件类别与归档阶段汇总")+
         table(["时间","来源","事件","候选"],d.events.map(e=>[
           date(e.at),safe(e.source),safe(phaseLabels[e.stage]||e.stage),safe(e.trial||"—")])));
   }
@@ -437,7 +448,7 @@ function systemPage(d){
       rows([["当前任务",safe(live.task)],["最后状态 / 心跳",date(live.at)],["发布器",safe(d.log.publisher?.status||"等待同步")],
       ["恢复测试",d.audit.resumed?"第一代检查点完整":"无凭据"],["完成后重启",d.audit.restart_unchanged?"无重复调用或重跑":"无凭据"]]))+
     section(panelHead("历史异常")+"<p>"+safe(d.log.incident.summary)+"</p>")+'</div>'+
-    capabilityStatus(d.capability)+strategyLabStatus(d.strategy_lab)+section(panelHead("模型调用记录","仅显示已许可会话元数据与可用令牌用量")+
+    capabilityStatus(d.capability)+strategyLabStatus(d.strategy_lab)+openExecution(d.open_execution)+section(panelHead("模型调用记录","仅显示已许可会话元数据与可用令牌用量")+
       table(["时间","用途","候选","用时（秒）","输入 Token","输出 Token","状态","会话"],
         d.models.map(m=>[date(m.at),safe(m.source),safe(m.trial||"—"),num(m.seconds),
           num(m.usage.input_tokens,0),num(m.usage.output_tokens,0),safe(m.status),'<code>'+safe(m.session||"—")+'</code>'])))+
