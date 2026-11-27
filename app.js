@@ -134,7 +134,7 @@ function overview(d){
       rows([["当前任务",safe(d.runtime.task)],["执行阶段",safe(d.current?.status||"等待人工审核")],["市场评估器",d.market_readiness?.status==="awaiting_review"?'<a href="#audit">接线与成交审计</a>':"待验收"],["最近登记",safe(d.latest?.id||"—")],
         ["已淘汰 / 证据不足",rejects+" / "+uncertain],["待独立验证",num(waiting,0)],["开发账户账本",num(wallets,0)],["研发状态更新时间",date(d.runtime.at)]])+
       ((d.current?.hypothesis||d.latest?.hypothesis)?'<details><summary>'+safe(d.current?"当前候选假设":"最近候选假设")+'</summary><p class="detailcopy">'+safe(d.current?.hypothesis||d.latest?.hypothesis)+'</p></details>':""))+'</div>'+
-    marketExpansion(d.market_expansion)+admissionPilot(d.admission_pilot)+openBatch(d.open_twelfth)+openBatch(d.open_eleventh)+openBatch(d.open_tenth)+openBatch(d.open_ninth)+openBatch(d.open_eighth)+openBatch(d.open_seventh)+openBatch(d.open_sixth)+openBatch(d.open_fifth)+formalBudget(d.formal_run)+strategyLabStatus(d.strategy_lab)+(d.open_admission?openAdmission(d.open_admission):openExecution(d.open_execution))+
+    historyDevelopment(d.history_development)+marketExpansion(d.market_expansion)+admissionPilot(d.admission_pilot)+openBatch(d.open_twelfth)+openBatch(d.open_eleventh)+openBatch(d.open_tenth)+openBatch(d.open_ninth)+openBatch(d.open_eighth)+openBatch(d.open_seventh)+openBatch(d.open_sixth)+openBatch(d.open_fifth)+formalBudget(d.formal_run)+strategyLabStatus(d.strategy_lab)+(d.open_admission?openAdmission(d.open_admission):openExecution(d.open_execution))+
     '<div class="top-gap">'+section(panelHead("最近候选","各计划执行结果及证据类别",'<a class="textbutton" href="#tree">查看进化树</a>')+
       table(["编号","策略","样本口径","中性净额","状态"],tab))+'</div>';
 }
@@ -386,6 +386,15 @@ function openBatch(panel){
     '<p class="muted">'+(panel.diagnostic_upgrade?'L1 分别记录绝对价格、配对与指示性执行成本。':'L1 为价格诊断。')+'L2 净额含冻结成本。独立留验继续封存。</p>');
 }
 
+function historyDevelopment(panel){
+  if(!panel)return "";
+  return section(panelHead("历史开发补充 R1",safe(panel.market||"—"),bubble(panel.scope,"blue"))+
+    rows([["原生归档 / 工程评分日",num(panel.r_native_days,0)+" / "+num(panel.r_engineering_scored_days,0)],
+      ["正式品种 / 已批准评分日",num(panel.former_formal_markets,0)+" / "+num(panel.former_formal_days,0)],
+      ["MU 冻结窗口 / 执行档",num(panel.mu_whole_windows,0)+" / "+num(panel.mu_profiles,0)],
+      ["工程训练日期簇 / 隔离逐笔成交",num(panel.engineering_train_day_clusters,0)+" / "+num(panel.engineering_test_fills,0)]]));
+}
+
 function marketExpansion(panel){
   if(!panel)return "";
   return section(panelHead("全市场目录与样本扩展","已用开发样本、逐笔工程",bubble(panel.scope,"blue"))+
@@ -417,7 +426,7 @@ function auditPage(d){
   const a=d.audit;
   const labels={credential_fixture_denied:"凭证探针拒绝",evaluator_write_denied:"评估器改写拒绝",external_program_denied:"外部进程拒绝",listing_denied:"目录枚举拒绝",minimal_env:"最小环境",network_denied:"策略执行禁网",read_denied:"外部文件读取拒绝",scratch_read_write:"临时目录可读写",symlink_read_denied:"符号链接越界拒绝"};
   return heading("Governance / Audit","防过拟合审计","记录固定评估器、样本权限和不确定性。",bubble("留验封存","blue"))+
-    marketExpansion(d.market_expansion)+admissionPilot(d.admission_pilot)+openBatch(d.open_twelfth)+openBatch(d.open_eleventh)+openBatch(d.open_tenth)+openBatch(d.open_ninth)+openBatch(d.open_eighth)+openBatch(d.open_seventh)+openBatch(d.open_sixth)+openBatch(d.open_fifth)+(d.open_admission?openAdmission(d.open_admission):openExecution(d.open_execution))+
+    historyDevelopment(d.history_development)+marketExpansion(d.market_expansion)+admissionPilot(d.admission_pilot)+openBatch(d.open_twelfth)+openBatch(d.open_eleventh)+openBatch(d.open_tenth)+openBatch(d.open_ninth)+openBatch(d.open_eighth)+openBatch(d.open_seventh)+openBatch(d.open_sixth)+openBatch(d.open_fifth)+(d.open_admission?openAdmission(d.open_admission):openExecution(d.open_execution))+
     '<div class="grid kpis">'+tile("已用市场候选",num(a.registered_market,0),"全部登记")+
       tile("CSCV PBO",pct(a.pbo),num(a.blocks,0)+" 个区块 · 开发诊断")+
       tile("DSR 区块",num(a.dsr_blocks,0),"仅已用样本")+
@@ -428,7 +437,7 @@ function auditPage(d){
       '<details><summary>查看冻结晋级条款</summary><p class="detailcopy">'+safe(a.gate)+'</p></details>')+
     section(panelHead("进程与数据隔离","九项 macOS 内核探针")+
       rows(Object.entries(a.isolation).map(([key,val])=>[labels[key]||key,val?bubble("通过"):bubble("待核对","bad")])) )+'</div>'+
-    marketExpansion(d.market_expansion)+marketReadiness(d.market_readiness)+
+    historyDevelopment(d.history_development)+marketExpansion(d.market_expansion)+marketReadiness(d.market_readiness)+
     section(panelHead("候选拒绝与晋级依据","PBO、DSR 与区间证据不能证明未来表现")+
       table(["候选","DSR","状态","判定依据"],d.nodes.map(n=>[linkTrial(n.id),num(n.dsr,3),trialStatus(n.status),safe(n.gate_reasons.join("；"))])));
 }
