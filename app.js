@@ -134,7 +134,7 @@ function overview(d){
       rows([["当前任务",safe(d.runtime.task)],["执行阶段",safe(d.current?.status||"等待人工审核")],["市场评估器",d.market_readiness?.status==="awaiting_review"?'<a href="#audit">接线与成交审计</a>':"待验收"],["最近登记",safe(d.latest?.id||"—")],
         ["已淘汰 / 证据不足",rejects+" / "+uncertain],["待独立验证",num(waiting,0)],["开发账户账本",num(wallets,0)],["研发状态更新时间",date(d.runtime.at)]])+
       ((d.current?.hypothesis||d.latest?.hypothesis)?'<details><summary>'+safe(d.current?"当前候选假设":"最近候选假设")+'</summary><p class="detailcopy">'+safe(d.current?.hypothesis||d.latest?.hypothesis)+'</p></details>':""))+'</div>'+
-    openBatch(d.open_eighth)+openBatch(d.open_seventh)+openBatch(d.open_sixth)+openBatch(d.open_fifth)+formalBudget(d.formal_run)+strategyLabStatus(d.strategy_lab)+(d.open_admission?openAdmission(d.open_admission):openExecution(d.open_execution))+
+    admissionPilot(d.admission_pilot)+openBatch(d.open_eighth)+openBatch(d.open_seventh)+openBatch(d.open_sixth)+openBatch(d.open_fifth)+formalBudget(d.formal_run)+strategyLabStatus(d.strategy_lab)+(d.open_admission?openAdmission(d.open_admission):openExecution(d.open_execution))+
     '<div class="top-gap">'+section(panelHead("最近候选","各计划执行结果及证据类别",'<a class="textbutton" href="#tree">查看进化树</a>')+
       table(["编号","策略","样本口径","中性净额","状态"],tab))+'</div>';
 }
@@ -213,7 +213,7 @@ function treePage(d,id){
     '<div class="top-gap">'+section(panelHead("真实模型驱动合成", "已验证反馈驱动的两代工程", bubble("V2","blue"))+forest("synthetic_engineering"))+'</div>'+
     (unknown.length?section(panelHead("待核对的父代")+unknown.map(n=>safe(n.id)).join("、")):"")+'</div>'+
     section(panelHead(safe(selected.id+" · "+selected.name),"候选溯源",classBadge(selected.scope))+detail(selected)+
-    '<div class="actions"><a class="textbutton" href="#results/'+safe(selected.id)+'">'+(publicSite?"查看公开指标":"查看指标与代码差异")+'</a></div>')+'</div>'+strategyLabLineage(d.strategy_lab)+openBatch(d.open_eighth)+openBatch(d.open_seventh)+openBatch(d.open_sixth)+openBatch(d.open_fifth)+
+    '<div class="actions"><a class="textbutton" href="#results/'+safe(selected.id)+'">'+(publicSite?"查看公开指标":"查看指标与代码差异")+'</a></div>')+'</div>'+strategyLabLineage(d.strategy_lab)+admissionPilot(d.admission_pilot)+openBatch(d.open_eighth)+openBatch(d.open_seventh)+openBatch(d.open_sixth)+openBatch(d.open_fifth)+
     (d.open_admission?section(panelHead("历史执行工程","正式市场血缘保持原登记")+
       '<p class="muted">四窗六档工程复验单独登记，新增正式市场父子边 0 条。</p><a class="textbutton" href="#audit">查看架构准入</a>'):"");
 }
@@ -336,6 +336,16 @@ function openAdmission(panel){
     '<p class="muted">'+safe(panel.requirements.join(" · "))+'</p>');
 }
 
+function admissionPilot(p){
+  if(!p)return "";
+  return section(panelHead("第九批前市场准入专项","工程验收",bubble("正式研究待人工审核","blue"))+
+    rows([["工程合约",safe(p.contract)], ["对账单元 / 模拟成交片段",[p.engineered_cells,p.fill_fragments].map(n=>num(n,0)).join(" / ")],
+      ["聚合深度 / 历史双边报价样本",[p.downloaded_depth_samples,p.bbo_samples].map(n=>num(n,0)).join(" / ")],
+      ["目录合约 / 正式钱包",[p.catalogue_count,p.formal_wallets].map(n=>num(n,0)).join(" / ")],
+      ["模型派发 / Token",[p.model_calls,p.tokens].map(n=>num(n,0)).join(" / ")]])+
+    '<p class="muted">交易使用既有冻结档位的逐笔代理。已下载深度仅供工程验证。</p>');
+}
+
 function openBatch(panel){
   if(!panel)return "";
   const arch={open_rule:"开放规则",state_matrix:"状态矩阵",dynamic_sizing:"动态分层",statistical:"统计",
@@ -379,7 +389,7 @@ function auditPage(d){
   const a=d.audit;
   const labels={credential_fixture_denied:"凭证探针拒绝",evaluator_write_denied:"评估器改写拒绝",external_program_denied:"外部进程拒绝",listing_denied:"目录枚举拒绝",minimal_env:"最小环境",network_denied:"策略执行禁网",read_denied:"外部文件读取拒绝",scratch_read_write:"临时目录可读写",symlink_read_denied:"符号链接越界拒绝"};
   return heading("Governance / Audit","防过拟合审计","记录固定评估器、样本权限和不确定性。",bubble("留验封存","blue"))+
-    openBatch(d.open_eighth)+openBatch(d.open_seventh)+openBatch(d.open_sixth)+openBatch(d.open_fifth)+(d.open_admission?openAdmission(d.open_admission):openExecution(d.open_execution))+
+    admissionPilot(d.admission_pilot)+openBatch(d.open_eighth)+openBatch(d.open_seventh)+openBatch(d.open_sixth)+openBatch(d.open_fifth)+(d.open_admission?openAdmission(d.open_admission):openExecution(d.open_execution))+
     '<div class="grid kpis">'+tile("已用市场候选",num(a.registered_market,0),"全部登记")+
       tile("CSCV PBO",pct(a.pbo),num(a.blocks,0)+" 个区块 · 开发诊断")+
       tile("DSR 区块",num(a.dsr_blocks,0),"仅已用样本")+
