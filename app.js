@@ -134,7 +134,7 @@ function overview(d){
       rows([["当前任务",safe(d.runtime.task)],["执行阶段",safe(d.current?.status||"等待人工审核")],["市场评估器",d.market_readiness?.status==="awaiting_review"?'<a href="#audit">接线与成交审计</a>':"待验收"],["最近登记",safe(d.latest?.id||"—")],
         ["已淘汰 / 证据不足",rejects+" / "+uncertain],["待独立验证",num(waiting,0)],["开发账户账本",num(wallets,0)],["研发状态更新时间",date(d.runtime.at)]])+
       ((d.current?.hypothesis||d.latest?.hypothesis)?'<details><summary>'+safe(d.current?"当前候选假设":"最近候选假设")+'</summary><p class="detailcopy">'+safe(d.current?.hypothesis||d.latest?.hypothesis)+'</p></details>':""))+'</div>'+
-    admissionPilot(d.admission_pilot)+openBatch(d.open_ninth)+openBatch(d.open_eighth)+openBatch(d.open_seventh)+openBatch(d.open_sixth)+openBatch(d.open_fifth)+formalBudget(d.formal_run)+strategyLabStatus(d.strategy_lab)+(d.open_admission?openAdmission(d.open_admission):openExecution(d.open_execution))+
+    admissionPilot(d.admission_pilot)+openBatch(d.open_tenth)+openBatch(d.open_ninth)+openBatch(d.open_eighth)+openBatch(d.open_seventh)+openBatch(d.open_sixth)+openBatch(d.open_fifth)+formalBudget(d.formal_run)+strategyLabStatus(d.strategy_lab)+(d.open_admission?openAdmission(d.open_admission):openExecution(d.open_execution))+
     '<div class="top-gap">'+section(panelHead("最近候选","各计划执行结果及证据类别",'<a class="textbutton" href="#tree">查看进化树</a>')+
       table(["编号","策略","样本口径","中性净额","状态"],tab))+'</div>';
 }
@@ -213,7 +213,7 @@ function treePage(d,id){
     '<div class="top-gap">'+section(panelHead("真实模型驱动合成", "已验证反馈驱动的两代工程", bubble("V2","blue"))+forest("synthetic_engineering"))+'</div>'+
     (unknown.length?section(panelHead("待核对的父代")+unknown.map(n=>safe(n.id)).join("、")):"")+'</div>'+
     section(panelHead(safe(selected.id+" · "+selected.name),"候选溯源",classBadge(selected.scope))+detail(selected)+
-    '<div class="actions"><a class="textbutton" href="#results/'+safe(selected.id)+'">'+(publicSite?"查看公开指标":"查看指标与代码差异")+'</a></div>')+'</div>'+strategyLabLineage(d.strategy_lab)+admissionPilot(d.admission_pilot)+openBatch(d.open_ninth)+openBatch(d.open_eighth)+openBatch(d.open_seventh)+openBatch(d.open_sixth)+openBatch(d.open_fifth)+
+    '<div class="actions"><a class="textbutton" href="#results/'+safe(selected.id)+'">'+(publicSite?"查看公开指标":"查看指标与代码差异")+'</a></div>')+'</div>'+strategyLabLineage(d.strategy_lab)+admissionPilot(d.admission_pilot)+openBatch(d.open_tenth)+openBatch(d.open_ninth)+openBatch(d.open_eighth)+openBatch(d.open_seventh)+openBatch(d.open_sixth)+openBatch(d.open_fifth)+
     (d.open_admission?section(panelHead("历史执行工程","正式市场血缘保持原登记")+
       '<p class="muted">四窗六档工程复验单独登记，新增正式市场父子边 0 条。</p><a class="textbutton" href="#audit">查看架构准入</a>'):"");
 }
@@ -350,11 +350,15 @@ function openBatch(panel){
   if(!panel)return "";
   const arch={open_rule:"开放规则",state_matrix:"状态矩阵",dynamic_sizing:"动态分层",statistical:"统计",
     machine_learning:"机器学习",hybrid:"混合",multi_strategy:"共享全仓组合"};
-  return section(panelHead(panel.batch===9?"第九批有限自主研究":panel.batch===8?"第八批市场覆盖与经济机制研究":panel.batch===7?"第七批开放架构对照研究":panel.batch===6?"第六批开放架构经济机制研究":"第五批开放架构真实市场研究","已用 Binance 开发样本",bubble(panel.state==="stopped"?"待人工审核":"正式研究进行中","blue"))+
+  const marketStage={qualified:"限定正式准入",engineering:"执行工程，待审核",data:"资料工程"};
+  return section(panelHead(panel.batch===10?"第十批行情补档与自主研究":panel.batch===9?"第九批有限自主研究":panel.batch===8?"第八批市场覆盖与经济机制研究":panel.batch===7?"第七批开放架构对照研究":panel.batch===6?"第六批开放架构经济机制研究":"第五批开放架构真实市场研究","已用 Binance 开发样本",bubble(panel.state==="stopped"?"待人工审核":"正式研究进行中","blue"))+
     rows([["试验席位 / 钱包",num(panel.used.candidates,0)+" / "+num(panel.used.formal_wallets,0)],
       ["模型派发 / Token",num(panel.used.model_calls,0)+" / "+num(panel.used.tokens,0)],
       ...(panel.batch>=6?[["Token 预警线",num(panel.token_warning,0)],["基础设施登记",num(panel.health_findings,0)]]:[]),
       ["L1 / 完成 L2 / 实测父子边",[panel.diagnostics,panel.completed,panel.parent_edges].map(n=>num(n,0)).join(" / ")],
+      ...(panel.batch===10?[["官方归档文件 / 下载 MB",num(panel.archive_files,0)+" / "+num(panel.data_bytes/1e6,2)],
+        ...Object.entries(panel.native_market_stages||{}).map(([market,entry])=>[safe(market),num(entry.data_windows,0)+" 个窗 · "+marketStage[entry.stage]]),
+        ["决策时订单预检",panel.order_preflight?"已验收":"验收中"]]:[]),
       ...(panel.batch===9?[["工程账户对账 / 已登记",[panel.reconciled_engineering_accounts,panel.engineering_accounts].map(n=>num(n,0)).join(" / ")],
         ["工程整窗通过数 / 正式新增市场",[panel.full_clock_windows,panel.new_formal_markets].map(n=>num(n,0)).join(" / ")],
         ...Object.entries(panel.engineering_windows||{}).map(([symbol,windows])=>[safe(symbol+" 工程通过窗口"),windows.map(safe).join("、")||"—"]),
@@ -366,6 +370,7 @@ function openBatch(panel){
       ...(panel.stop?[["停止原因",safe(panel.stop)]]:[])])+
     table(["试验","层级与架构","状态","Base / 补充窗","实测父代"],panel.rows.map(r=>[
       safe(r.id),safe(r.stage+" · "+(arch[r.architecture]||"开放策略")+(r.matched_signal_pair?" · 同信号":r.controlled?" · 架构对照":"")),safe(r.status),
+      panel.results_private && (r.whole_wallet||r.status==="诊断完成")?"结果留在本机":
       r.whole_wallet?sign(r.net.base)+" / "+sign(r.net.later)+" USDT":
         r.absolute_bps?.base!==null && Number.isFinite(r.absolute_bps?.base)?
           "绝对 "+sign(r.absolute_bps.base)+" / "+sign(r.absolute_bps.later)+" bp":
@@ -393,7 +398,7 @@ function auditPage(d){
   const a=d.audit;
   const labels={credential_fixture_denied:"凭证探针拒绝",evaluator_write_denied:"评估器改写拒绝",external_program_denied:"外部进程拒绝",listing_denied:"目录枚举拒绝",minimal_env:"最小环境",network_denied:"策略执行禁网",read_denied:"外部文件读取拒绝",scratch_read_write:"临时目录可读写",symlink_read_denied:"符号链接越界拒绝"};
   return heading("Governance / Audit","防过拟合审计","记录固定评估器、样本权限和不确定性。",bubble("留验封存","blue"))+
-    admissionPilot(d.admission_pilot)+openBatch(d.open_ninth)+openBatch(d.open_eighth)+openBatch(d.open_seventh)+openBatch(d.open_sixth)+openBatch(d.open_fifth)+(d.open_admission?openAdmission(d.open_admission):openExecution(d.open_execution))+
+    admissionPilot(d.admission_pilot)+openBatch(d.open_tenth)+openBatch(d.open_ninth)+openBatch(d.open_eighth)+openBatch(d.open_seventh)+openBatch(d.open_sixth)+openBatch(d.open_fifth)+(d.open_admission?openAdmission(d.open_admission):openExecution(d.open_execution))+
     '<div class="grid kpis">'+tile("已用市场候选",num(a.registered_market,0),"全部登记")+
       tile("CSCV PBO",pct(a.pbo),num(a.blocks,0)+" 个区块 · 开发诊断")+
       tile("DSR 区块",num(a.dsr_blocks,0),"仅已用样本")+
@@ -536,7 +541,7 @@ async function render(){
     }else if(page==="results"){
       if(id && nodeFor(id)?.completed && id!==state.selected){ state.selected=id;state.period="base";state.compare=""; }
       content.innerHTML=heading("Research / Replay","量化回测中心",publicSite?"对照公开的区间汇总与抽样曲线。":"按候选、区间及执行档查看实际账本。")+
-        openBatch(state.data.open_ninth)+openBatch(state.data.open_eighth)+openBatch(state.data.open_seventh)+openBatch(state.data.open_sixth)+openBatch(state.data.open_fifth)+section(resultControls())+'<div id="result-data" class="loading">正在读取账户…</div>';
+        openBatch(state.data.open_tenth)+openBatch(state.data.open_ninth)+openBatch(state.data.open_eighth)+openBatch(state.data.open_seventh)+openBatch(state.data.open_sixth)+openBatch(state.data.open_fifth)+section(resultControls())+'<div id="result-data" class="loading">正在读取账户…</div>';
       const data=await request(urlTrial(state.selected,state.period,state.profile));
       const other=state.compare?await request(urlTrial(state.compare,state.period,state.profile)):null;
       if(ticket!==renderVersion)return;
